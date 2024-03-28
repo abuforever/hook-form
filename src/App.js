@@ -1,46 +1,56 @@
-import React, { useState, useEffect } from 'react';
-import { useForm } from 'react-hook-form';
+import React, { useState, useEffect } from "react";
+import { useForm } from "react-hook-form";
 
 function App() {
-  const { register, handleSubmit, formState: { errors }, reset } = useForm();
+  const {
+    register,
+    handleSubmit,
+    formState: { errors },
+    reset,
+    setValue,
+  } = useForm();
   const [newdata, setNewdata] = useState([]);
   const [editingIndex, setEditingIndex] = useState(null);
 
   useEffect(() => {
-    const storedData = JSON.parse(localStorage.getItem('key')) || [];
+    const storedData = JSON.parse(localStorage.getItem("key")) || [];
     setNewdata(storedData);
   }, []);
 
   const onSubmit = (data) => {
-    if (editingIndex !== null) {
-      const updatedData = [...newdata];
-      // updatedData[editingIndex] = data;
-      setNewdata(updatedData);
-      setEditingIndex(null);
-      localStorage.setItem('key', JSON.stringify(updatedData));
-      reset();
+    if (editingIndex) {
+      const newData = newdata?.map((item) => {
+        if (item?.id === editingIndex) {
+          return data;
+        }
+        return item;
+      });
+
+      setNewdata(newData);
+      localStorage.setItem("key", JSON.stringify(newData));
     } else {
+      data.id = Math.floor(Math.random() * 1000) + newdata?.length;
       const updatedData = [...newdata, data];
       setNewdata(updatedData);
-      localStorage.setItem('key', JSON.stringify(updatedData));
-      reset();
+      localStorage.setItem("key", JSON.stringify(updatedData));
     }
+    setEditingIndex(null);
+    reset();
   };
 
-  const deleteItem = (index) => {
-    const updatedData = [...newdata];
-    // updatedData.splice(index, 1);
+  const deleteItem = (id) => {
+    const updatedData = newdata?.filter((item) => item?.id !== id);
     setNewdata(updatedData);
-    localStorage.setItem('key', JSON.stringify(updatedData));
+    localStorage.setItem("key", JSON.stringify(updatedData));
   };
 
-  const editItem = (index) => {
-    const itemToEdit = newdata[index];
-    setEditingIndex(index);
-    reset(itemToEdit);
+  const editItem = (id) => {
+    const isItem = newdata?.find((item) => item?.id === id) || {};
+    Object.keys(isItem).forEach((key) => {
+      setValue(key, isItem[key]);
+    });
+    setEditingIndex(id);
   };
-
-  console.log(newdata);
 
   return (
     <div className="App">
@@ -95,12 +105,23 @@ function App() {
         />
         {errors.protein && <p>Harf qatnashmasin!</p>}
 
-        <input type="submit" value={editingIndex !== null ? "Tahrirlash" : "Qo'shish"} />
+        <input type="submit" value={editingIndex ? "Tahrirlash" : "Qo'shish"} />
+        {editingIndex ? (
+          <input
+            type="button"
+            value={"Ortga"}
+            onClick={() => {
+              setEditingIndex(null);
+              reset();
+            }}
+          />
+        ) : null}
       </form>
       <div className="rezult">
         <table>
           <thead>
             <tr>
+              <th>№</th>
               <th>Ism</th>
               <th>Kaloriya</th>
               <th>Yog'</th>
@@ -110,19 +131,32 @@ function App() {
             </tr>
           </thead>
           <tbody>
-            {newdata?.length ? newdata?.map((item, index) => (
-              <tr key={index}>
-                <td>{item.name}</td>
-                <td>{item.calories}</td>
-                <td>{item.fat}</td>
-                <td>{item.carbs}</td>
-                <td>{item.protein}</td>
-                <td>
-                  <button onClick={() => editItem(index)} className='editbtn'>Tahrirlash</button>
-                  <button onClick={() => deleteItem(index)} className='deletebtn'>O'chirish</button>
-                </td>
-              </tr>
-            )) : null}
+            {newdata?.length
+              ? newdata?.map((item) => (
+                  <tr key={item?.id}>
+                    <td>{item?.id}</td>
+                    <td>{item?.name}</td>
+                    <td>{item?.calories}</td>
+                    <td>{item?.fat}</td>
+                    <td>{item?.carbs}</td>
+                    <td>{item?.protein}</td>
+                    <td>
+                      <button
+                        onClick={() => editItem(item?.id)}
+                        className="editbtn"
+                      >
+                        Tahrirlash
+                      </button>
+                      <button
+                        onClick={() => deleteItem(item?.id)}
+                        className="deletebtn"
+                      >
+                        O'chirish
+                      </button>
+                    </td>
+                  </tr>
+                ))
+              : null}
           </tbody>
         </table>
       </div>
