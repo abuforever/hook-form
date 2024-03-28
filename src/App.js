@@ -1,5 +1,8 @@
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import { useForm } from "react-hook-form";
+import { useDispatch } from "react-redux";
+import { useAppSelector } from "./redux/selectors";
+import { addUser, setUsers } from "./redux/user-slice";
 
 function App() {
   const {
@@ -9,43 +12,34 @@ function App() {
     reset,
     setValue,
   } = useForm();
-  const [newdata, setNewdata] = useState([]);
+  const users = useAppSelector("users");
+  const dispatch = useDispatch();
   const [editingIndex, setEditingIndex] = useState(null);
-
-  useEffect(() => {
-    const storedData = JSON.parse(localStorage.getItem("key")) || [];
-    setNewdata(storedData);
-  }, []);
 
   const onSubmit = (data) => {
     if (editingIndex) {
-      const newData = newdata?.map((item) => {
+      const newData = users?.map((item) => {
         if (item?.id === editingIndex) {
           return data;
         }
         return item;
       });
-
-      setNewdata(newData);
-      localStorage.setItem("key", JSON.stringify(newData));
+      dispatch(setUsers(newData));
     } else {
-      data.id = Math.floor(Math.random() * 1000) + newdata?.length;
-      const updatedData = [...newdata, data];
-      setNewdata(updatedData);
-      localStorage.setItem("key", JSON.stringify(updatedData));
+      data.id = Math.floor(Math.random() * 1000) + users?.length;
+      dispatch(addUser(data));
     }
     setEditingIndex(null);
     reset();
   };
 
   const deleteItem = (id) => {
-    const updatedData = newdata?.filter((item) => item?.id !== id);
-    setNewdata(updatedData);
+    const updatedData = users?.filter((item) => item?.id !== id);
     localStorage.setItem("key", JSON.stringify(updatedData));
   };
 
   const editItem = (id) => {
-    const isItem = newdata?.find((item) => item?.id === id) || {};
+    const isItem = users?.find((item) => item?.id === id) || {};
     Object.keys(isItem).forEach((key) => {
       setValue(key, isItem[key]);
     });
@@ -131,8 +125,8 @@ function App() {
             </tr>
           </thead>
           <tbody>
-            {newdata?.length
-              ? newdata?.map((item) => (
+            {users?.length
+              ? users?.map((item) => (
                   <tr key={item?.id}>
                     <td>{item?.id}</td>
                     <td>{item?.name}</td>
